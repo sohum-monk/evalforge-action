@@ -1,0 +1,43 @@
+name: EvalForge change test
+description: Test this change of your AI product against production with EvalForge. Comments the verdict on the PR and fails the job when the release gate says blocked.
+branding: { icon: check-circle, color: purple }
+inputs:
+  api-key:        { description: "EvalForge workspace API key (store it as a secret)", required: true }
+  project:        { description: "EvalForge project id, e.g. my-bot", required: true }
+  prompt-file:    { description: "Path to the system prompt in this repo. Omit to keep production's prompt", required: false, default: "" }
+  model:          { description: "Model to test. Omit to keep production's model", required: false, default: "" }
+  provider:       { description: "Provider (groq | openai | anthropic | endpoint). Omit to keep production's", required: false, default: "" }
+  code-sha:       { description: "Commit being tested", required: false, default: "${{ github.event.pull_request.head.sha || github.sha }}" }
+  note:           { description: "Short description of the change", required: false, default: "${{ github.event.pull_request.title || github.ref_name }}" }
+  trials:         { description: "Runs per case (majority counts). 1–3", required: false, default: "1" }
+  fail-on-blocked: { description: "Fail the job when the gate says blocked", required: false, default: "true" }
+  comment:        { description: "Post or update a PR comment with the result", required: false, default: "true" }
+  timeout-minutes: { description: "Give up waiting after this many minutes", required: false, default: "20" }
+  api-url:        { description: "EvalForge API base URL", required: false, default: "https://evalforge-ingestion-j25bllrdva-uc.a.run.app" }
+  app-url:        { description: "EvalForge app URL (for links)", required: false, default: "https://evalforge-dashboard-j25bllrdva-uc.a.run.app" }
+  github-token:   { description: "Token used to comment on the PR (needs pull-requests: write)", required: false, default: "${{ github.token }}" }
+outputs:
+  verdict:  { description: "ready | blocked", value: "${{ steps.run.outputs.verdict }}" }
+  test-id:  { description: "EvalForge change test id", value: "${{ steps.run.outputs.test-id }}" }
+  report-url: { description: "Link to the change in EvalForge", value: "${{ steps.run.outputs.report-url }}" }
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      run: bash "${{ github.action_path }}/run.sh"
+      env:
+        EF_API_KEY: ${{ inputs.api-key }}
+        EF_PROJECT: ${{ inputs.project }}
+        EF_PROMPT_FILE: ${{ inputs.prompt-file }}
+        EF_MODEL: ${{ inputs.model }}
+        EF_PROVIDER: ${{ inputs.provider }}
+        EF_CODE_SHA: ${{ inputs.code-sha }}
+        EF_NOTE: ${{ inputs.note }}
+        EF_TRIALS: ${{ inputs.trials }}
+        EF_FAIL_ON_BLOCKED: ${{ inputs.fail-on-blocked }}
+        EF_COMMENT: ${{ inputs.comment }}
+        EF_TIMEOUT_MIN: ${{ inputs.timeout-minutes }}
+        EF_API_URL: ${{ inputs.api-url }}
+        EF_APP_URL: ${{ inputs.app-url }}
+        GH_TOKEN: ${{ inputs.github-token }}
