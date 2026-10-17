@@ -13,8 +13,8 @@ inputs:
   fail-on-blocked: { description: "Fail the job when the gate says blocked", required: false, default: "true" }
   comment:        { description: "Post or update a PR comment with the result", required: false, default: "true" }
   timeout-minutes: { description: "Give up waiting after this many minutes", required: false, default: "20" }
-  api-url:        { description: "NinjaEval API base URL", required: false, default: "https://evalforge-ingestion-j25bllrdva-uc.a.run.app" }
-  app-url:        { description: "NinjaEval app URL (for links)", required: false, default: "https://evalforge-dashboard-j25bllrdva-uc.a.run.app" }
+  api-url:        { description: "NinjaEval API base URL", required: false, default: "https://api.ninjaeval.com" }
+  app-url:        { description: "NinjaEval app URL (for links)", required: false, default: "https://ninjaeval.com" }
   github-token:   { description: "Token used to comment on the PR (needs pull-requests: write)", required: false, default: "${{ github.token }}" }
 outputs:
   verdict:  { description: "ready | blocked", value: "${{ steps.run.outputs.verdict }}" }
