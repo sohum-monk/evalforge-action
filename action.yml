@@ -1,9 +1,9 @@
-name: EvalForge change test
-description: Test this change of your AI product against production with EvalForge. Comments the verdict on the PR and fails the job when the release gate says blocked.
+name: NinjaEval change test
+description: Test this change of your AI product against production with NinjaEval. Comments the verdict on the PR and fails the job when the release gate says blocked.
 branding: { icon: check-circle, color: purple }
 inputs:
-  api-key:        { description: "EvalForge workspace API key (store it as a secret)", required: true }
-  project:        { description: "EvalForge project id, e.g. my-bot", required: true }
+  api-key:        { description: "NinjaEval workspace API key (store it as a secret)", required: true }
+  project:        { description: "NinjaEval project id, e.g. my-bot", required: true }
   prompt-file:    { description: "Path to the system prompt in this repo. Omit to keep production's prompt", required: false, default: "" }
   model:          { description: "Model to test. Omit to keep production's model", required: false, default: "" }
   provider:       { description: "Provider (groq | openai | anthropic | endpoint). Omit to keep production's", required: false, default: "" }
@@ -13,13 +13,13 @@ inputs:
   fail-on-blocked: { description: "Fail the job when the gate says blocked", required: false, default: "true" }
   comment:        { description: "Post or update a PR comment with the result", required: false, default: "true" }
   timeout-minutes: { description: "Give up waiting after this many minutes", required: false, default: "20" }
-  api-url:        { description: "EvalForge API base URL", required: false, default: "https://evalforge-ingestion-j25bllrdva-uc.a.run.app" }
-  app-url:        { description: "EvalForge app URL (for links)", required: false, default: "https://evalforge-dashboard-j25bllrdva-uc.a.run.app" }
+  api-url:        { description: "NinjaEval API base URL", required: false, default: "https://evalforge-ingestion-j25bllrdva-uc.a.run.app" }
+  app-url:        { description: "NinjaEval app URL (for links)", required: false, default: "https://evalforge-dashboard-j25bllrdva-uc.a.run.app" }
   github-token:   { description: "Token used to comment on the PR (needs pull-requests: write)", required: false, default: "${{ github.token }}" }
 outputs:
   verdict:  { description: "ready | blocked", value: "${{ steps.run.outputs.verdict }}" }
-  test-id:  { description: "EvalForge change test id", value: "${{ steps.run.outputs.test-id }}" }
-  report-url: { description: "Link to the change in EvalForge", value: "${{ steps.run.outputs.report-url }}" }
+  test-id:  { description: "NinjaEval change test id", value: "${{ steps.run.outputs.test-id }}" }
+  report-url: { description: "Link to the change in NinjaEval", value: "${{ steps.run.outputs.report-url }}" }
 runs:
   using: composite
   steps:

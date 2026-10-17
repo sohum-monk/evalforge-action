@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# EvalForge change test for CI: copy production, apply this change, run the suite, report, gate.
+# NinjaEval change test for CI: copy production, apply this change, run the suite, report, gate.
 # Needs curl and jq (preinstalled on GitHub-hosted runners); gh for the PR comment.
 set -euo pipefail
 
@@ -10,7 +10,7 @@ api() {   # api METHOD PATH [JSON] -> body; exits on HTTP errors with the server
   local m=$1 p=$2 d=${3:-} code body
   body=$(mktemp)
   code=$(curl -sS -o "$body" -w '%{http_code}' -X "$m" "${API}${p}" "${AUTH[@]}" -H 'Content-Type: application/json' ${d:+--data "$d"})
-  if [ "$code" -ge 400 ]; then echo "::error::EvalForge ${m} ${p} → ${code}: $(jq -r '.detail // .' "$body" 2>/dev/null || cat "$body")" >&2; exit 1; fi
+  if [ "$code" -ge 400 ]; then echo "::error::NinjaEval ${m} ${p} → ${code}: $(jq -r '.detail // .' "$body" 2>/dev/null || cat "$body")" >&2; exit 1; fi
   cat "$body"; rm -f "$body"
 }
 
@@ -28,7 +28,7 @@ fi
 start=$(api POST "/projects/${EF_PROJECT}/test-change" "$req")
 T=$(jq -r .test_id <<<"$start"); LABEL=$(jq -r .label <<<"$start"); BASE=$(jq -r .baseline_label <<<"$start")
 URL="${EF_APP_URL%/}/#/change/${T}"
-echo "EvalForge: testing ${LABEL} against production ${BASE} → ${URL}"
+echo "NinjaEval: testing ${LABEL} against production ${BASE} → ${URL}"
 out test-id "$T"; out report-url "$URL"
 
 # 3. wait for every case, then (briefly) for the automatic diagnoses of regressions
@@ -51,7 +51,7 @@ done
 VERDICT=$(jq -r '.gate.verdict' <<<"$t"); out verdict "$VERDICT"
 summary=$(jq -r --arg url "$URL" --arg label "$LABEL" --arg base "$BASE" '
   def p: if . == null then "–" else (. * 100 | round | tostring) + "%" end;
-  (if .gate.verdict == "ready" then "### ✅ EvalForge: **ready to ship**" else "### ⛔ EvalForge: **blocked**" end),
+  (if .gate.verdict == "ready" then "### ✅ NinjaEval: **ready to ship**" else "### ⛔ NinjaEval: **blocked**" end),
   "",
   "`\($label)` vs production `\($base)` · **\(.candidate_summary.passed)/\(.candidate_summary.cases)** passing (was \(.baseline_summary.passed)) · score \(.baseline_summary.avg_score | p) → \(.candidate_summary.avg_score | p) · **\(.counts.regressed)** regressed, \(.counts.fixed) fixed",
   "",
@@ -60,10 +60,10 @@ summary=$(jq -r --arg url "$URL" --arg label "$LABEL" --arg base "$BASE" '
   (if ([.rows[] | select(.kind == "regressed")] | length) > 0 then
      "| Regressed case | Cause | Suggested fix |", "|---|---|---|",
      (.rows[] | select(.kind == "regressed") |
-       "| \(.title) | \(.rca.result.diagnosis.cause // "–") \(.rca.result.diagnosis.kind // "" | ascii_downcase | gsub("_"; " ")) | \((.rca.result.fix.summary // "open in EvalForge") | gsub("\\|"; "/") | gsub("\n"; " ")) |"),
+       "| \(.title) | \(.rca.result.diagnosis.cause // "–") \(.rca.result.diagnosis.kind // "" | ascii_downcase | gsub("_"; " ")) | \((.rca.result.fix.summary // "open in NinjaEval") | gsub("\\|"; "/") | gsub("\n"; " ")) |"),
      ""
    else empty end),
-  "[Open the full comparison and diagnosis in EvalForge →](\($url))"' <<<"$t")
+  "[Open the full comparison and diagnosis in NinjaEval →](\($url))"' <<<"$t")
 report=$(api GET "/change-tests/${T}/report.md")
 body="<!-- evalforge:${EF_PROJECT} -->
 ${summary}
@@ -87,6 +87,6 @@ fi
 
 # 6. gate
 if [ "$VERDICT" = "blocked" ] && [ "${EF_FAIL_ON_BLOCKED:-true}" = "true" ]; then
-  echo "::error::EvalForge release gate: blocked. ${URL}" >&2; exit 1
+  echo "::error::NinjaEval release gate: blocked. ${URL}" >&2; exit 1
 fi
-echo "EvalForge release gate: ${VERDICT}"
+echo "NinjaEval release gate: ${VERDICT}"
