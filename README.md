@@ -27,6 +27,22 @@ jobs:
           # model: openai/gpt-oss-120b     # optional: test a different model
 ```
 
+**Stage gates (smoke before merge, full suite before release).** Set up a stage in NinjaEval (*Scoring & gate →
+Stage gates*, e.g. **smoke** = the cases tagged `smoke`, at least 80% pass), then run it on every pull request and the
+full suite where you release:
+
+```yaml
+      - uses: sohum-monk/evalforge-action@v1
+        with:
+          api-key: ${{ secrets.EVALFORGE_API_KEY }}
+          project: my-bot
+          prompt-file: prompts/system.md
+          stage: smoke                       # quick: only the smoke cases; blocks the PR if the stage is blocked
+```
+
+A stage run comments "smoke stage passed / blocked" (its own comment, separate from the full run's) and fails the job
+when blocked, but it never ships: only a full run's verdict is a release decision.
+
 **Setup (2 minutes)**
 1. In [NinjaEval](https://ninjaeval.com), open your workspace, go to **⚙ Workspace & API keys**, and create a key.
 2. In GitHub, open your repo → Settings → Secrets and variables → Actions, and add it as `EVALFORGE_API_KEY`.
