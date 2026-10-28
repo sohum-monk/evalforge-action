@@ -28,7 +28,7 @@ jobs:
 ```
 
 **Setup (2 minutes)**
-1. In [NinjaEval](https://evalforge-dashboard-j25bllrdva-uc.a.run.app), open your workspace, go to **⚙ Workspace & API keys**, and create a key.
+1. In [NinjaEval](https://ninjaeval.com), open your workspace, go to **⚙ Workspace & API keys**, and create a key.
 2. In GitHub, open your repo → Settings → Secrets and variables → Actions, and add it as `EVALFORGE_API_KEY`.
 3. Add the workflow above.
 
