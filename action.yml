@@ -10,6 +10,7 @@ inputs:
   code-sha:       { description: "Commit being tested", required: false, default: "${{ github.event.pull_request.head.sha || github.sha }}" }
   note:           { description: "Short description of the change", required: false, default: "${{ github.event.pull_request.title || github.ref_name }}" }
   trials:         { description: "Runs per case (majority counts). 1–3", required: false, default: "1" }
+  stage:          { description: "Run only a stage gate set up in NinjaEval (e.g. smoke): its cases and rules, for a quick check before merge. Omit for the full release gate", required: false, default: "" }
   fail-on-blocked: { description: "Fail the job when the gate says blocked", required: false, default: "true" }
   comment:        { description: "Post or update a PR comment with the result", required: false, default: "true" }
   timeout-minutes: { description: "Give up waiting after this many minutes", required: false, default: "20" }
@@ -17,7 +18,7 @@ inputs:
   app-url:        { description: "NinjaEval app URL (for links)", required: false, default: "https://ninjaeval.com" }
   github-token:   { description: "Token used to comment on the PR (needs pull-requests: write)", required: false, default: "${{ github.token }}" }
 outputs:
-  verdict:  { description: "ready | blocked", value: "${{ steps.run.outputs.verdict }}" }
+  verdict:  { description: "ready | blocked (for a stage: that stage's verdict)", value: "${{ steps.run.outputs.verdict }}" }
   test-id:  { description: "NinjaEval change test id", value: "${{ steps.run.outputs.test-id }}" }
   report-url: { description: "Link to the change in NinjaEval", value: "${{ steps.run.outputs.report-url }}" }
 runs:
@@ -35,6 +36,7 @@ runs:
         EF_CODE_SHA: ${{ inputs.code-sha }}
         EF_NOTE: ${{ inputs.note }}
         EF_TRIALS: ${{ inputs.trials }}
+        EF_STAGE: ${{ inputs.stage }}
         EF_FAIL_ON_BLOCKED: ${{ inputs.fail-on-blocked }}
         EF_COMMENT: ${{ inputs.comment }}
         EF_TIMEOUT_MIN: ${{ inputs.timeout-minutes }}

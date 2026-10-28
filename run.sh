@@ -18,6 +18,7 @@ api() {   # api METHOD PATH [JSON] -> body; exits on HTTP errors with the server
 req=$(jq -n --arg sha "$EF_CODE_SHA" --arg note "${EF_NOTE:0:200}" --argjson trials "${EF_TRIALS:-1}" \
   '{code_sha: $sha, note: $note, trials: $trials}')
 [ -n "${EF_MODEL:-}" ] && req=$(jq --arg v "$EF_MODEL" '. + {model: $v}' <<<"$req")
+[ -n "${EF_STAGE:-}" ] && req=$(jq --arg v "$EF_STAGE" '. + {stage: $v}' <<<"$req")
 [ -n "${EF_PROVIDER:-}" ] && req=$(jq --arg v "$EF_PROVIDER" '. + {provider: $v}' <<<"$req")
 if [ -n "${EF_PROMPT_FILE:-}" ]; then
   [ -f "$EF_PROMPT_FILE" ] || { echo "::error::prompt-file not found: $EF_PROMPT_FILE" >&2; exit 1; }
@@ -51,7 +52,10 @@ done
 VERDICT=$(jq -r '.gate.verdict' <<<"$t"); out verdict "$VERDICT"
 summary=$(jq -r --arg url "$URL" --arg label "$LABEL" --arg base "$BASE" '
   def p: if . == null then "–" else (. * 100 | round | tostring) + "%" end;
-  (if .gate.verdict == "ready" then "### ✅ NinjaEval: **ready to ship**" else "### ⛔ NinjaEval: **blocked**" end),
+  (if .gate.stage then
+     (if .gate.verdict == "ready" then "### ✅ NinjaEval: **\(.gate.stage) stage passed**" else "### ⛔ NinjaEval: **blocked at the \(.gate.stage) stage**" end)
+     + " (\(.partial.cases) of \(.partial.of) cases; a quick check, not a release decision)"
+   elif .gate.verdict == "ready" then "### ✅ NinjaEval: **ready to ship**" else "### ⛔ NinjaEval: **blocked**" end),
   "",
   "`\($label)` vs production `\($base)` · **\(.candidate_summary.passed)/\(.candidate_summary.cases)** passing (was \(.baseline_summary.passed)) · score \(.baseline_summary.avg_score | p) → \(.candidate_summary.avg_score | p) · **\(.counts.regressed)** regressed, \(.counts.fixed) fixed",
   "",
@@ -65,7 +69,7 @@ summary=$(jq -r --arg url "$URL" --arg label "$LABEL" --arg base "$BASE" '
    else empty end),
   "[Open the full comparison and diagnosis in NinjaEval →](\($url))"' <<<"$t")
 report=$(api GET "/change-tests/${T}/report.md")
-body="<!-- evalforge:${EF_PROJECT} -->
+body="<!-- evalforge:${EF_PROJECT}:${EF_STAGE:-release} -->
 ${summary}
 
 <details><summary>Full change report</summary>
@@ -79,7 +83,7 @@ printf '%s\n' "$summary"
 PR=$(jq -r '.pull_request.number // empty' "${GITHUB_EVENT_PATH:-/dev/null}" 2>/dev/null || true)
 if [ "${EF_COMMENT:-true}" = "true" ] && [ -n "$PR" ] && command -v gh >/dev/null; then
   cid=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --paginate \
-        --jq ".[] | select(.body | startswith(\"<!-- evalforge:${EF_PROJECT} -->\")) | .id" 2>/dev/null | tail -1 || true)
+        --jq ".[] | select(.body | startswith(\"<!-- evalforge:${EF_PROJECT}:${EF_STAGE:-release} -->\")) | .id" 2>/dev/null | tail -1 || true)
   if [ -n "$cid" ]; then gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${cid}" -f body="$body" >/dev/null && echo "updated PR comment"
   else gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" -f body="$body" >/dev/null && echo "posted PR comment"; fi \
     || echo "::warning::couldn't comment on the PR (give the job 'pull-requests: write')"
